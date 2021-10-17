@@ -6,8 +6,11 @@
 #include <errno.h>
 #include "structdefs.h"
 #include <sys/stat.h>
+#include "semun.h"
 
 #define INITLOG "initlogs.txt"
+
+
 
 Person initPerson(int src, int des){
     Person P;
@@ -17,7 +20,7 @@ Person initPerson(int src, int des){
 }
 
 /*
- * initFloor function creates random no. of person processes and
+ * initFloorForkPersons function creates random no. of person processes and
  * according to the source and destination floor no. of a person
  * (decided at runtime of Person Process)
  * waitingToGoUp and waitingToGoDown is updated.
@@ -26,7 +29,7 @@ Person initPerson(int src, int des){
  * wait till all person on a floor have decided their destination.
  */
 
-void initFloor(int no, FloorInfo *F, key_t shmidLifts, key_t shmidFloors){
+void initFloorForkPersons(int no, FloorInfo *F, key_t shmidLifts, key_t shmidFloors){
     srand(time(NULL)*no);
     int personCnt = rand()%(MAXPERSON + 1); //personCnt belongs to {0, 1, 2, 3,..., MAXPERSON}
     printf("%d people at floor %d\n", personCnt, no);
@@ -34,16 +37,30 @@ void initFloor(int no, FloorInfo *F, key_t shmidLifts, key_t shmidFloors){
     int src = -1, des = -1;
     char src_str[10] = "", des_str[10] = "";
     char shmidLifts_str[24], shmidFloors_str[24];
+
 //    printf("#%d|%s\n", shmidLifts, shmidLifts_str);
 
+    // Deviating from implementation of sample code(of slides)
+
+    // technically semctl accepts lvalue as a parameter(as seen in sample code)
+    // but as far as I know an unnamed temporary variable is created
+    // during the call. So an instance of that variable is created and used
+    // I don't have much idea about how internally unions are handled.
+
+    // but I am guessing if union is not defined for a system. program will not compile.
+    // hence as per documentation using the defined way of using semctl for SETVAL command.
+
+    union semun zeroint;
+    zeroint.val = 0;
+
     F->upArrow = semget(IPC_PRIVATE,1, S_IRWXU|S_IRWXO|S_IRWXO|IPC_CREAT);
-    semctl(F->upArrow, 0, SETVAL, 0);
+    semctl(F->upArrow, 0, SETVAL, zeroint);
 
     F->downArrow = semget(IPC_PRIVATE, 1, S_IRWXU|S_IRWXO|S_IRWXO|IPC_CREAT);
-    semctl(F->downArrow, 0, SETVAL, 0);
+    semctl(F->downArrow, 0, SETVAL, zeroint);
 
     F->arithmetic = semget(IPC_PRIVATE, 1, S_IRWXU|S_IRWXO|S_IRWXO|IPC_CREAT);
-    semctl(F->arithmetic, 0, SETVAL, 0);
+    semctl(F->arithmetic, 0, SETVAL, zeroint);
 
 
     for(int j=0; j<personCnt; j++){
@@ -95,7 +112,7 @@ void initFloor(int no, FloorInfo *F, key_t shmidLifts, key_t shmidFloors){
 
 }
 
-void initLift(int no, LiftInfo* L, key_t shmidLifts, key_t shmidFloors){
+void forkLift(int no, LiftInfo* L, key_t shmidLifts, key_t shmidFloors){
     srand(time(NULL)*no);
     for(int i=0; i<=no; i++){
         rand();

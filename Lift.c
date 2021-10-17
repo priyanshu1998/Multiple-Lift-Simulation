@@ -6,7 +6,6 @@
 #include <sys/shm.h>
 #include <sys/wait.h>
 #include <errno.h>
-#include <assert.h>
 
 #include "structdefs.h"
 #include "ipcwrappers.h"
@@ -26,13 +25,17 @@ int main(int argc, char **argv){
 
     init(shmidLifts, shmidFloors, &lifts, &floors);
 
-    assert(lifts != NULL);// theoretically boolean expression should never Fail
-    // because for a failed condition the process would have terminated at init stage.
-
     LiftInfo L = lifts[liftno-1]; //as liftno is 1 indexed
 
-
     printf("# %s %d %d %d\n", argv[0], liftno, shmidLifts, shmidFloors);
+    /*
+    #pragma clang diagnostic push
+    #pragma ide diagnostic ignored "EndlessLoop"
+    while(1){
+        P(L.stops)
+    }
+    #pragma clang diagnostic pop
+     */
 
     release(lifts, floors);
     return 0;

@@ -40,10 +40,9 @@ struct LiftInfo{
                                     (unused and commented explained later)*/
 };
 
-
 Person initPerson(int src, int des);
-void initFloor(int no, FloorInfo* F, key_t shmidLifts, key_t shmidFloors);
-void initLift(int no, LiftInfo* L, key_t shmidLifts, key_t shmidFloors);
+void initFloorForkPersons(int no, FloorInfo* F, key_t shmidLifts, key_t shmidFloors);
+void forkLift(int no, LiftInfo* L, key_t shmidLifts, key_t shmidFloors);
 
 
 

@@ -9,12 +9,8 @@
 
 #include "structdefs.h"
 
-
-#define P(s) semop(s, &pop, 1)              /* pop is the structure we pass for doing the P(s) operation */
-#define V(s) semop(s, &vop, 1)              /* vop is the structure we pass for doing the V(s) operation */
-
-
-void initFloors(int shmidLifts, int shmidFloors){
+/* This function initialises each floor and forks persons of that floor. */
+void initFloorsForkPersons(int shmidLifts, int shmidFloors){
     int perm = S_IRWXU | S_IRWXG | S_IRWXO;
     int shmid = shmget(IPC_PRIVATE, NFLOOR*sizeof (FloorInfo), perm | IPC_CREAT);
 
@@ -30,13 +26,13 @@ void initFloors(int shmidLifts, int shmidFloors){
     }
 
     for(int i=0; i<NFLOOR; i++){
-        initFloor(i+1, floors+i, shmidLifts, shmidFloors);
+        initFloorForkPersons(i + 1, floors + i, shmidLifts, shmidFloors);
     }
 
     return;
 }
 
-void initLifts(int shmidLifts, int shmidFloors){
+void forkLifts(int shmidLifts, int shmidFloors){
     int perm = S_IRWXU | S_IRWXG | S_IRWXO;
     int shmid = shmget(IPC_PRIVATE, NLIFT*sizeof (LiftInfo), perm|IPC_CREAT);
 
@@ -52,7 +48,7 @@ void initLifts(int shmidLifts, int shmidFloors){
     }
 
     for(int i=0; i<NLIFT; i++){
-        initLift(i+1, lifts+i, shmidLifts, shmidFloors);
+        forkLift(i + 1, lifts + i, shmidLifts, shmidFloors);
     }
     return;
 }
@@ -71,9 +67,8 @@ int main() {
         printf("[%s] shmid | %d", "Floors", errsv);
     }
 
-    initFloors(shmidLifts, shmidFloors);
-    initLifts(shmidLifts, shmidFloors);
-//    while(wait(-1));
+    initFloorsForkPersons(shmidLifts, shmidFloors);
+    forkLifts(shmidLifts, shmidFloors);
     printf("Hello, World!\n");
     return 0;
 }
