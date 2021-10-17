@@ -3,14 +3,16 @@
 #include <unistd.h>
 #include <time.h>
 #include <sys/wait.h>
+#include <errno.h>
 #include "structdefs.h"
 
 #define INITLOG "initlogs.txt"
 
-void initPerson(int src, int des){
+Person initPerson(int src, int des){
     Person P;
     P.src = src;
     P.des = des;
+    return P;
 }
 
 /*
@@ -23,16 +25,21 @@ void initPerson(int src, int des){
  * wait till all person on a floor have decided their destination.
  */
 
-void initFloor(int no, FloorInfo *F){
+void initFloor(int no, FloorInfo *F, key_t shmidLifts, key_t shmidFloors){
     srand(time(NULL)*no);
     int personCnt = rand()%(MAXPERSON + 1); //personCnt belongs to {0, 1, 2, 3,..., MAXPERSON}
     printf("%d people at floor %d\n", personCnt, no);
     int src = -1, des = -1;
     char src_str[10] = "", des_str[10] = "";
+    char shmidLifts_str[24], shmidFloors_str[24];
+//    printf("#%d|%s\n", shmidLifts, shmidLifts_str);
+
 
 
     for(int j=0; j<personCnt; j++){
         int pid = fork();
+//        printf("#%d|%s\n", shmidLifts, shmidLifts_str);
+
         if(pid == 0){
             src = no;
 
@@ -63,11 +70,49 @@ void initFloor(int no, FloorInfo *F){
 //    while(wait(-1));
     return;
 
-    child_label:
-
+    child_label :
     sprintf(src_str, "%d", src);
     sprintf(des_str, "%d", des);
+    sprintf(shmidLifts_str, "%d", shmidLifts);
+    sprintf(shmidFloors_str, "%d", shmidFloors);
 
-    execl("./person","./person", src_str, des_str, NULL);
+    int stat = execl("./Person","./Person", src_str, des_str, shmidLifts_str, shmidFloors_str, NULL);
+    if(stat == -1){
+        int errsv = errno;
+        printf("execl | %s | %d \n", __func__ , errsv);
+        return;
+    }
+
+}
+
+void initLift(int no, LiftInfo* L, key_t shmidLifts, key_t shmidFloors){
+    srand(time(NULL)*no);
+    for(int i=0; i<no; i++){
+        rand();
+    }
+
+    L->no = no;
+    L->position = 1+rand()%NFLOOR;
+    L->direction = rand()%2;
+    L->peopleInLift = 0;
+
+    for(int i=0; i<NFLOOR; i++){
+        L->stops[i] = 0;
+    }
+
+    char shmidLifts_str[24], shmidFloors_str[24];
+    sprintf(shmidLifts_str, "%d", shmidLifts);
+    sprintf(shmidFloors_str, "%d", shmidFloors);
+
+    int pid = fork();
+    if(pid == 0)
+    {
+        int stat = execl("./Lift","./Lift", shmidLifts_str, shmidFloors_str, NULL);
+        if(stat == -1){
+            int errsv = errno;
+            printf("execl | %s | %d \n", __func__ , errsv);
+            return;
+        }
+    }
     return;
 }

@@ -9,7 +9,8 @@ typedef struct Person Person;
 typedef struct sembuf semaphore;
 
 #define NFLOOR 5
-#define MAXPERSON 10
+#define MAXPERSON 10 //at init per floor
+#define NLIFT 3
 
 struct Person{
     int src;
@@ -40,8 +41,9 @@ struct LiftInfo{
 };
 
 
-void initPerson();
-void initFloor(int no, FloorInfo* F);
+Person initPerson(int src, int des);
+void initFloor(int no, FloorInfo* F, key_t shmidLifts, key_t shmidFloors);
+void initLift(int no, LiftInfo* L, key_t shmidLifts, key_t shmidFloors);
 
 
 
