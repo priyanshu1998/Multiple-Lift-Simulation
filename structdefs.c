@@ -87,7 +87,7 @@ void initFloor(int no, FloorInfo *F, key_t shmidLifts, key_t shmidFloors){
 
 void initLift(int no, LiftInfo* L, key_t shmidLifts, key_t shmidFloors){
     srand(time(NULL)*no);
-    for(int i=0; i<no; i++){
+    for(int i=0; i<=no; i++){
         rand();
     }
 
@@ -101,13 +101,16 @@ void initLift(int no, LiftInfo* L, key_t shmidLifts, key_t shmidFloors){
     }
 
     char shmidLifts_str[24], shmidFloors_str[24];
+    char no_str[8];
+
+    sprintf(no_str, "%d", no);
     sprintf(shmidLifts_str, "%d", shmidLifts);
     sprintf(shmidFloors_str, "%d", shmidFloors);
 
     int pid = fork();
     if(pid == 0)
     {
-        int stat = execl("./Lift","./Lift", shmidLifts_str, shmidFloors_str, NULL);
+        int stat = execl("./Lift","./Lift", no_str, shmidLifts_str, shmidFloors_str, NULL);
         if(stat == -1){
             int errsv = errno;
             printf("execl | %s | %d \n", __func__ , errsv);

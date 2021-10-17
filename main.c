@@ -52,7 +52,7 @@ void initLifts(int shmidLifts, int shmidFloors){
     }
 
     for(int i=0; i<NLIFT; i++){
-        initLift(i, lifts+i, shmidLifts, shmidFloors);
+        initLift(i+1, lifts+i, shmidLifts, shmidFloors);
     }
     return;
 }
@@ -60,8 +60,16 @@ void initLifts(int shmidLifts, int shmidFloors){
 int main() {
     int perm = S_IRWXU | S_IRWXG | S_IRWXO;
     int shmidLifts = shmget(IPC_PRIVATE, NFLOOR*sizeof (FloorInfo), perm | IPC_CREAT);
-    int shmidFloors = shmget(IPC_PRIVATE, NLIFT*sizeof (LiftInfo), perm|IPC_CREAT);
+    if(shmidLifts == -1){
+        int errsv = errno;
+        printf("[%s] shmid  | %d", "Lifts", errsv);
+    }
 
+    int shmidFloors = shmget(IPC_PRIVATE, NLIFT*sizeof (LiftInfo), perm|IPC_CREAT);
+    if(shmidFloors == -1){
+        int errsv = errno;
+        printf("[%s] shmid | %d", "Floors", errsv);
+    }
 
     initFloors(shmidLifts, shmidFloors);
     initLifts(shmidLifts, shmidFloors);
