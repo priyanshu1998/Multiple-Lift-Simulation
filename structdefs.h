@@ -6,7 +6,7 @@
 typedef struct FloorInfo FloorInfo;
 typedef struct LiftInfo LiftInfo;
 typedef struct Person Person;
-typedef struct sembuf semaphore;
+typedef int semaphore;
 
 #define NFLOOR 5
 #define MAXPERSON 10 //at init per floor
