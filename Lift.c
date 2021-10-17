@@ -9,53 +9,7 @@
 #include <assert.h>
 
 #include "structdefs.h"
-
-/* Initialise the pointers to lifts and floor variable. */
-static int init(int shmidLifts, int shmidFloors, LiftInfo **lifts, FloorInfo** floors);
-
-/* Detach the shared memory from the processes VA space. */
-static int release(LiftInfo *lifts, FloorInfo *floors);
-
-static int init(int shmidLifts, int shmidFloors, LiftInfo **lifts, FloorInfo** floors){
-    *lifts = (LiftInfo*)shmat(shmidLifts, 0, 0);
-    if((void*)lifts == (void*)-1){
-        int errsv = errno;
-        printf("[%s] shmat | %d \n", "Lifts" , errsv);
-        release(*lifts, *floors);
-        exit(EXIT_FAILURE);
-    }
-
-    *floors = (FloorInfo*)shmat(shmidFloors, 0, 0);
-    if((void*)lifts == (void*)-1){
-        int errsv = errno;
-        printf("[%s] shmat | %d \n", "Floors", errsv);
-        release(*lifts, *floors);
-        exit(EXIT_FAILURE);
-    }
-
-    return 0;
-}
-
-
-static int release(LiftInfo *lifts, FloorInfo *floors){
-    if(lifts != NULL){
-        int dtLifts = shmdt(lifts);
-        if(dtLifts == -1){
-            int errsv = errno;
-            printf("[%s] shmdt | %d \n", "Lifts" , errsv);
-        }
-    }
-
-    if(floors != NULL){
-        int dtFloors = shmdt(floors);
-        if(dtFloors == -1){
-            int errsv = errno;
-            printf("[%s] shmdt | %d \n", "Floors" , errsv);
-        }
-    }
-
-    return 0;
-}
+#include "ipcwrappers.h"
 
 int main(int argc, char **argv){
     if(argc != 4){
