@@ -8,14 +8,19 @@
 #include <sys/stat.h>
 #include "semun.h"
 
-#define INITLOG "initlogs.txt"
+/*
+...or in Standard C. From $6.8.6.1/1 of the C Language Standard
 
+The identifier in a goto statement shall name a label located somewhere in the enclosing function.
+ A goto statement shall not jump from outside the scope of an identifier
+ having a variably modified type to inside the scope of that identifier.
+*/
 
-
-Person initPerson(int src, int des){
+Person initPerson(int src, int des, char *name){
     Person P;
     P.src = src;
     P.des = des;
+    P.name = name; //argv[5]
     return P;
 }
 
@@ -40,30 +45,10 @@ void initFloorForkPersons(int no, FloorInfo *F, key_t shmidLifts, key_t shmidFlo
 
 //    printf("#%d|%s\n", shmidLifts, shmidLifts_str);
 
-    // Deviating from implementation of sample code(of slides)
-
-    // technically semctl accepts lvalue as a parameter(as seen in sample code)
-    // but as far as I know an unnamed temporary variable is created
-    // during the call. So an instance of that variable is created and used
-    // I don't have much idea about how internally unions are handled.
-
-    // but I am guessing if union is not defined for a system. program will not compile.
-    // hence as per documentation using the defined way of using semctl for SETVAL command.
-
-    union semun zeroint;
-    zeroint.val = 0;
-
-    F->upArrow = semget(IPC_PRIVATE,1, S_IRWXU|S_IRWXO|S_IRWXO|IPC_CREAT);
-    semctl(F->upArrow, 0, SETVAL, zeroint);
-
-    F->downArrow = semget(IPC_PRIVATE, 1, S_IRWXU|S_IRWXO|S_IRWXO|IPC_CREAT);
-    semctl(F->downArrow, 0, SETVAL, zeroint);
-
-    F->arithmetic = semget(IPC_PRIVATE, 1, S_IRWXU|S_IRWXO|S_IRWXO|IPC_CREAT);
-    semctl(F->arithmetic, 0, SETVAL, zeroint);
 
 
-    for(int j=0; j<personCnt; j++){
+    int j;
+    for(j=0; j<personCnt; j++){
         int pid = fork();
 //        printf("#%d|%s\n", shmidLifts, shmidLifts_str);
 
@@ -103,7 +88,12 @@ void initFloorForkPersons(int no, FloorInfo *F, key_t shmidLifts, key_t shmidFlo
     sprintf(shmidLifts_str, "%d", shmidLifts);
     sprintf(shmidFloors_str, "%d", shmidFloors);
 
-    int stat = execl("./Person","./Person", src_str, des_str, shmidLifts_str, shmidFloors_str, NULL);
+    char name[2];
+    name[0] = ('A'+((no-1)*5+j));
+    name[1] = 0;
+
+    printf("[%s] | %d -> %d \n", name, src, des);
+    int stat = execl("./Person","./Person", src_str, des_str, shmidLifts_str, shmidFloors_str, name, NULL);
     if(stat == -1){
         int errsv = errno;
         printf("execl | %s | %d \n", __func__ , errsv);
@@ -114,14 +104,22 @@ void initFloorForkPersons(int no, FloorInfo *F, key_t shmidLifts, key_t shmidFlo
 
 void forkLift(int no, LiftInfo* L, key_t shmidLifts, key_t shmidFloors){
     srand(time(NULL)*no);
-    for(int i=0; i<=no; i++){
+    for(int i=0; i<no; i++){
         rand();
     }
 
     L->no = no;
-    L->position = 1+rand()%NFLOOR;
-    L->direction = rand()%2;
+    L->direction = (rand()%2)?1:-1;
+    L->position = 1+(rand()%NFLOOR);
     L->peopleInLift = 0;
+    int perm = 0777;
+
+//    union semun zeroint;
+//    zeroint.val = 0;
+//    for(int i=0; i<NFLOOR; i++) {
+//        L->stopsem[i] = semget(IPC_PRIVATE, 1, perm | IPC_CREAT);
+//        semctl(L->stopsem[i], 0, SETVAL, zeroint);
+//    }
 
     for(int i=0; i<NFLOOR; i++){
         L->stops[i] = 0;

@@ -28,4 +28,5 @@ int init(int shmidLifts, int shmidFloors, LiftInfo **lifts, FloorInfo** floors);
 /* Detach the shared memory from the processes VA space. */
 int release(LiftInfo *lifts, FloorInfo *floors);
 
+void initLocks(int shmidLifts, int shmidFloors);
 #endif //ASSIGNMENT6_IPCWRAPPERS_H

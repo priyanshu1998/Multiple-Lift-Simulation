@@ -9,12 +9,13 @@ typedef struct Person Person;
 typedef int semaphore;
 
 #define NFLOOR 5
-#define MAXPERSON 10 //at init per floor
-#define NLIFT 3
+#define MAXPERSON 5 //at init per floor
+#define NLIFT 1
 
 struct Person{
     int src;
     int des;
+    char *name;
 };
 
 struct FloorInfo{
@@ -25,8 +26,9 @@ struct FloorInfo{
     semaphore downArrow;        /* people going down wait on this */
 
 
-    semaphore arithmetic;       /* lock for making updates to stops[i] atomic */
-};
+    /* Added for cases when to lift going is same direction come at the floor */
+    semaphore arithmetic;     /* lock for making updates to F.waitingToGoDown / F.waitingToGoUp  atomic */
+    /*------------------------------------------------------------------------*/};
 
 struct LiftInfo{
     int no;                     /* unique identifier for a lift */
@@ -35,12 +37,11 @@ struct LiftInfo{
     int peopleInLift;           /* #people in lift */
     int stops[NFLOOR];          /* #people(in lift) for each stop */
 
-    //semaphore stopsem[NFLOOR];
-                                /* #people in lift wait on one of these
-                                    (unused and commented explained later)*/
+    semaphore stopsem[NFLOOR];/* #people in lift wait on one of these */
+//    int step_cnt;
 };
 
-Person initPerson(int src, int des);
+Person initPerson(int src, int des, char *name);
 void initFloorForkPersons(int no, FloorInfo* F, key_t shmidLifts, key_t shmidFloors);
 void forkLift(int no, LiftInfo* L, key_t shmidLifts, key_t shmidFloors);
 

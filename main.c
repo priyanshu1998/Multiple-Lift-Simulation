@@ -8,18 +8,12 @@
 #include <errno.h>
 
 #include "structdefs.h"
+#include "semun.h"
+#include "ipcwrappers.h"
 
 /* This function initialises each floor and forks persons of that floor. */
 void initFloorsForkPersons(int shmidLifts, int shmidFloors){
-    int perm = S_IRWXU | S_IRWXG | S_IRWXO;
-    int shmid = shmget(IPC_PRIVATE, NFLOOR*sizeof (FloorInfo), perm | IPC_CREAT);
-
-    if(shmid == -1){
-        int errsv = errno;
-        printf("Error: shmget | %s | %d \n", __func__ ,errsv);
-    }
-
-    FloorInfo *floors = (FloorInfo*)shmat(shmid, NULL, 0);
+    FloorInfo *floors = (FloorInfo*)shmat(shmidFloors, NULL, 0);
     if((void*)floors == (void*)-1){
         int errsv = errno;
         printf("Error: shmat | %s | %d \n", __func__ , errsv);
@@ -33,15 +27,7 @@ void initFloorsForkPersons(int shmidLifts, int shmidFloors){
 }
 
 void forkLifts(int shmidLifts, int shmidFloors){
-    int perm = S_IRWXU | S_IRWXG | S_IRWXO;
-    int shmid = shmget(IPC_PRIVATE, NLIFT*sizeof (LiftInfo), perm|IPC_CREAT);
-
-    if(shmid == -1){
-        int errsv = errno;
-        printf("Error: shmget | %s | %d \n", __func__ ,errsv);
-    }
-
-    LiftInfo *lifts = (LiftInfo*) shmat(shmid, NULL, 0);
+    LiftInfo *lifts = (LiftInfo*) shmat(shmidLifts, NULL, 0);
     if((void*) lifts == (void*)-1){
         int errsv = errno;
         printf("Error: shmat | %s | %d \n", __func__ , errsv);
@@ -49,12 +35,14 @@ void forkLifts(int shmidLifts, int shmidFloors){
 
     for(int i=0; i<NLIFT; i++){
         forkLift(i + 1, lifts + i, shmidLifts, shmidFloors);
+        printf("@ no. %d | floor: %d\n", lifts[i].no, lifts[i].position );
     }
     return;
 }
 
+
 int main() {
-    int perm = S_IRWXU | S_IRWXG | S_IRWXO;
+    int perm = 0777;//S_IRWXU | S_IRWXG | S_IRWXO;
     int shmidLifts = shmget(IPC_PRIVATE, NFLOOR*sizeof (FloorInfo), perm | IPC_CREAT);
     if(shmidLifts == -1){
         int errsv = errno;
@@ -67,8 +55,9 @@ int main() {
         printf("[%s] shmid | %d", "Floors", errsv);
     }
 
+    initLocks(shmidLifts, shmidFloors);
     initFloorsForkPersons(shmidLifts, shmidFloors);
     forkLifts(shmidLifts, shmidFloors);
-    printf("Hello, World!\n");
+    while(1);
     return 0;
 }

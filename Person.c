@@ -30,11 +30,12 @@ void setChoicePriority(int *choices){
 }
 
 int main(int argc, char **argv){
-    if (argc != 5){
+    if (argc != 6){
         printf("'Person' process executed with incorrect no. of parameters\n");
         return 1;
     }
 
+    // src des log from initFloorForkPersons;
     int src = atoi(argv[1]);
     int des = atoi(argv[2]);
     int shmidLifts = atoi(argv[3]);
@@ -43,9 +44,10 @@ int main(int argc, char **argv){
     LiftInfo *lifts = NULL;
     FloorInfo *floors = NULL;
     init(shmidLifts, shmidFloors, &lifts, &floors);
-
-    Person p = initPerson(src, des);
-//    printf("$ %s %d %d %d %d\n",argv[0], p.src, p.des, shmidLifts, shmidFloors);
+    char *name = argv[5];
+    Person p = initPerson(src, des, name);
+//    printf("$ %d %d %d %d %d\n",getpid(), p.src, p.des, shmidLifts, shmidFloors);
+//    printf("$ %d | %d -> %d\n",getpid(), p.src, p.des);
 
     int choices[NFLOOR];
     setChoicePriority(choices);
@@ -60,25 +62,28 @@ int main(int argc, char **argv){
 
             //Person waiting to get into the lift--------------
             FloorInfo* X = &(floors[src_idx]);
-            V(X->upArrow);
-            V(X->arithmetic);
-            for(int i=0; i < NLIFT; i++){
+            P(X->upArrow);
+            P(X->arithmetic);
+            for(int i=0; i<NLIFT; i++){
                 L = &(lifts[i]);
                 if(L->position == p.src){
+                    printf("%s person got up.\n",p.name);
                     X->waitingToGoUp--;
                     L->stops[des_idx]++;
                     break;
                 }
             }
-            P(X->arithmetic);
-            P(X->upArrow);
+            sleep(1);
+            V(X->arithmetic);
+            V(X->upArrow);
             //Person has completed getting into the lift--------
 
 
             //Person waiting to get out of the lift--------
-            V(L->stopsem[des_idx]);
-            L->stops[des_idx]--;
             P(L->stopsem[des_idx]);
+            printf("%s person got down.\n", p.name);
+            L->stops[des_idx]--;
+            V(L->stopsem[des_idx]);
             //Person has got down from the lift------------
 
         }
@@ -91,28 +96,30 @@ int main(int argc, char **argv){
             int des_idx = p.des-1;
 
             FloorInfo* X = &(floors[src_idx]);
-            V(X->downArrow);
-            V(X->arithmetic);
-            for(int i=0; i < NLIFT; i++){
+            P(X->downArrow);
+            P(X->arithmetic);
+            for(int i=0; i<NLIFT; i++){
                 L = &(lifts[i]);
                 if(L->position == p.src){
+                    printf("%s person got up.\n", p.name);
                     X->waitingToGoDown--;
                     L->stops[des_idx]++;
                     break;
                 }
             }
-            P(X->arithmetic);
-            P(X->downArrow);
+            V(X->arithmetic);
+            V(X->downArrow);
             //Person has completed getting into the lift--------
 
             //Person waiting to get out of the lift--------
-            V(L->stopsem[des_idx]);
-            L->stops[des_idx]--;
             P(L->stopsem[des_idx]);
+            printf("%s person got down.\n", p.name);
+            L->stops[des_idx]--;
+            V(L->stopsem[des_idx]);
             //Person has got down from the lift------------
         }
         //================================================
-
+        break;
         sleep(1);
         //Person scheduling a new journey-------------------------------
         p.src = p.des;
@@ -124,10 +131,10 @@ int main(int argc, char **argv){
         int src_idx = p.src-1;
         FloorInfo *X = &(floors[src_idx]);
 
-        V(X->arithmetic);
+        P(X->arithmetic);
         if(p.des > p.src){ X->waitingToGoUp++;}
         else /* (p.des < p.src) */{ X->waitingToGoDown++;}
-        P(X->arithmetic);
+        V(X->arithmetic);
         //Person starts waiting at a floor to get into the lift----------
 
     }
