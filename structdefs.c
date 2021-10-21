@@ -42,6 +42,7 @@ void initFloorForkPersons(int no, FloorInfo *F, key_t shmidLifts, key_t shmidFlo
     int src = -1, des = -1;
     char src_str[10] = "", des_str[10] = "";
     char shmidLifts_str[24], shmidFloors_str[24];
+    char name[2];
 
 //    printf("#%d|%s\n", shmidLifts, shmidLifts_str);
 
@@ -88,11 +89,13 @@ void initFloorForkPersons(int no, FloorInfo *F, key_t shmidLifts, key_t shmidFlo
     sprintf(shmidLifts_str, "%d", shmidLifts);
     sprintf(shmidFloors_str, "%d", shmidFloors);
 
-    char name[2];
     name[0] = ('A'+((no-1)*5+j));
     name[1] = 0;
-
     printf("[%s] | %d -> %d \n", name, src, des);
+//    fflush(stdout);
+    sleep(1);
+
+
     int stat = execl("./Person","./Person", src_str, des_str, shmidLifts_str, shmidFloors_str, name, NULL);
     if(stat == -1){
         int errsv = errno;
@@ -112,6 +115,7 @@ void forkLift(int no, LiftInfo* L, key_t shmidLifts, key_t shmidFloors){
     L->direction = (rand()%2)?1:-1;
     L->position = 1+(rand()%NFLOOR);
     L->peopleInLift = 0;
+    L->step_cnt = 0;
     int perm = 0777;
 
 //    union semun zeroint;

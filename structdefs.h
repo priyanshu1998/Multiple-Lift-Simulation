@@ -10,7 +10,11 @@ typedef int semaphore;
 
 #define NFLOOR 5
 #define MAXPERSON 5 //at init per floor
-#define NLIFT 1
+#define NLIFT 2
+
+#define TOT_STEPS 100
+#define LIFT_SLEEP_T 1
+#define END_STOPTIME 1
 
 struct Person{
     int src;
@@ -38,7 +42,7 @@ struct LiftInfo{
     int stops[NFLOOR];          /* #people(in lift) for each stop */
 
     semaphore stopsem[NFLOOR];/* #people in lift wait on one of these */
-//    int step_cnt;
+    int step_cnt;
 };
 
 Person initPerson(int src, int des, char *name);

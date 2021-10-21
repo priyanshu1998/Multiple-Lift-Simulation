@@ -6,8 +6,9 @@
 #include <sys/shm.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <string.h>
 
-#define TOT_STEPS 25
+
 
 #include "structdefs.h"
 #include "ipcwrappers.h"
@@ -24,12 +25,15 @@ int main(int argc, char **argv){
 
     LiftInfo *lifts = NULL;
     FloorInfo *floors = NULL;
-    int step_cnt = 0;
+
+//    char filename[]
+//    strcat()
+//    FILE *fp = fopen("")
 
     init(shmidLifts, shmidFloors, &lifts, &floors);
 
     LiftInfo *L = &(lifts[liftno-1]); //as liftno is 1 indexed
-    printf("# no. %d | floor: %d\n", lifts[0].no, lifts[0].position);
+    printf("[0 | Lift_%d] | initial floor: %d\n", L->no, L->position);
 
 //    printf("# %s %d %d %d\n", argv[0], liftno, shmidLifts, shmidFloors);
 
@@ -48,7 +52,7 @@ int main(int argc, char **argv){
                 P(L->stopsem[F]);
                 if (L->stops[F] == 0) { break; }
                 V(L->stopsem[F]);
-                sleep(1);
+                sleep(LIFT_SLEEP_T);
             }
 
             // Releasing lock for those who want to get up =========
@@ -60,17 +64,19 @@ int main(int argc, char **argv){
                 if (X->waitingToGoUp == 0) {
                     if(L->position == NFLOOR){
                         L->direction = -1;
+                        sleep(END_STOPTIME);
                     }
                     L->position += L->direction;
+                    L->step_cnt++;
 
-                    if(L->direction == 1) {printf("Lift move up to %d.\n", L->position);}
-                    else{ printf("Lift move down to %d.\n", L->position);}
+                    if(L->direction == 1) {printf("[%d | Lift_%d] move up to %d.\n",L->step_cnt,L->no, L->position);}
+                    else{ printf("[%d | Lift_%d] move down to %d.\n",L->step_cnt,L->no, L->position);}
 
                     break;
                 }
                 V(X->arithmetic);
                 V(X->upArrow);
-                sleep(1);
+                sleep(LIFT_SLEEP_T);
             }
             V(X->arithmetic); // X.arithmetic was 1 before 'P(X.upArrow) line'
             // release X.arithmetic lock to maintain the state.
@@ -93,7 +99,7 @@ int main(int argc, char **argv){
                 P(L->stopsem[F]);
                 if (L->stops[F] == 0) { break; }
                 V(L->stopsem[F]);
-                sleep(1);
+                sleep(LIFT_SLEEP_T);
             }
 
 
@@ -105,23 +111,23 @@ int main(int argc, char **argv){
                 if (X->waitingToGoDown == 0) {
                     if(L->position == 1){
                         L->direction = 1;
+                        sleep(END_STOPTIME);
                     }
                     L->position += L->direction;
 
-                    if(L->direction == 1) {printf("Lift move up to %d.\n", L->position);}
-                    else{ printf("Lift move down to %d.\n", L->position);}
+                    L->step_cnt++;
+                    if(L->direction == 1) {printf("[%d | Lift_%d] move up to %d.\n",L->step_cnt,L->no, L->position);}
+                    else{ printf("[%d | Lift_%d] move down to %d.\n",L->step_cnt,L->no, L->position);}
 
                     break;
                 }
                 V(X->arithmetic);
                 V(X->downArrow);
-                sleep(1);
+                sleep(LIFT_SLEEP_T);
             }
             V(X->arithmetic);
         }
-
-        step_cnt++;
-        if(step_cnt == TOT_STEPS)break;
+        if(L->step_cnt > TOT_STEPS)break;
         /******************END OF CASE******************/
     }
     #pragma clang diagnostic pop

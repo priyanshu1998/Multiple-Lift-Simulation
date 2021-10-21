@@ -35,7 +35,7 @@ void forkLifts(int shmidLifts, int shmidFloors){
 
     for(int i=0; i<NLIFT; i++){
         forkLift(i + 1, lifts + i, shmidLifts, shmidFloors);
-        printf("@ no. %d | floor: %d\n", lifts[i].no, lifts[i].position );
+//        printf("@ no. %d | floor: %d\n", lifts[i].no, lifts[i].position );
     }
     return;
 }

@@ -67,13 +67,17 @@ int main(int argc, char **argv){
             for(int i=0; i<NLIFT; i++){
                 L = &(lifts[i]);
                 if(L->position == p.src){
-                    printf("%s person got up.\n",p.name);
+                    L->step_cnt++;
+
+                    printf("[%d | Lift_%d] %s person got up.\n",L->step_cnt, L->no, p.name);
+//                    printf("[%d | Lift_%d] %s person got up.\n",L->step_cnt, L->no, p.name);
+
                     X->waitingToGoUp--;
                     L->stops[des_idx]++;
                     break;
                 }
             }
-            sleep(1);
+//            sleep(1);
             V(X->arithmetic);
             V(X->upArrow);
             //Person has completed getting into the lift--------
@@ -81,7 +85,8 @@ int main(int argc, char **argv){
 
             //Person waiting to get out of the lift--------
             P(L->stopsem[des_idx]);
-            printf("%s person got down.\n", p.name);
+            L->step_cnt++;
+            printf("[%d | Lift_%d] %s person got down .\n",L->step_cnt,L->no, p.name);
             L->stops[des_idx]--;
             V(L->stopsem[des_idx]);
             //Person has got down from the lift------------
@@ -101,7 +106,8 @@ int main(int argc, char **argv){
             for(int i=0; i<NLIFT; i++){
                 L = &(lifts[i]);
                 if(L->position == p.src){
-                    printf("%s person got up.\n", p.name);
+                    L->step_cnt++;
+                    printf("[%d | Lift_%d] %s person got up.\n",L->step_cnt, L->no, p.name);
                     X->waitingToGoDown--;
                     L->stops[des_idx]++;
                     break;
@@ -113,13 +119,15 @@ int main(int argc, char **argv){
 
             //Person waiting to get out of the lift--------
             P(L->stopsem[des_idx]);
-            printf("%s person got down.\n", p.name);
+            L->step_cnt++;
+            printf("[%d | Lift_%d] %s person got down .\n",L->step_cnt,L->no, p.name);
             L->stops[des_idx]--;
             V(L->stopsem[des_idx]);
             //Person has got down from the lift------------
         }
         //================================================
-        break;
+        if(L->step_cnt > TOT_STEPS-25)break;
+
         sleep(1);
         //Person scheduling a new journey-------------------------------
         p.src = p.des;
@@ -136,7 +144,6 @@ int main(int argc, char **argv){
         else /* (p.des < p.src) */{ X->waitingToGoDown++;}
         V(X->arithmetic);
         //Person starts waiting at a floor to get into the lift----------
-
     }
     #pragma clang diagnostic pop
 
