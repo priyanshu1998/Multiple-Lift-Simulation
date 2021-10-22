@@ -9,10 +9,12 @@ typedef struct Person Person;
 typedef int semaphore;
 
 #define NFLOOR 5
-#define MAXPERSON 5 //at init per floor
+#define MAXPERSON 2 //at per floor
+
+// NFLOOR * MAXPERSON should always <= 26 as PERSON ARE NAMED A,B,C,...
 #define NLIFT 2
 
-#define TOT_STEPS 100
+#define TOT_STEPS 50
 #define LIFT_SLEEP_T 1
 #define END_STOPTIME 1
 
@@ -43,13 +45,12 @@ struct LiftInfo{
 
     semaphore stopsem[NFLOOR];/* #people in lift wait on one of these */
     int step_cnt;
+    int pipefd[2];
 };
 
 Person initPerson(int src, int des, char *name);
-void initFloorForkPersons(int no, FloorInfo* F, key_t shmidLifts, key_t shmidFloors);
-void forkLift(int no, LiftInfo* L, key_t shmidLifts, key_t shmidFloors);
-
-
+void initFloorForkPersons(int no, FloorInfo* F, key_t shmidLifts, key_t shmidFloors,int instance_cnt_shmid, int exit_check_lock_semid);
+void forkLift(int no, LiftInfo* L, key_t shmidLifts, key_t shmidFloors, int instance_cnt_shmid, int exit_check_lock_semid);
 
 
 #endif //ASSIGNMENT6_STRUCTDEFS_H

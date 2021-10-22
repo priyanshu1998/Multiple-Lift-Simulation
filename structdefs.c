@@ -34,22 +34,22 @@ Person initPerson(int src, int des, char *name){
  * wait till all person on a floor have decided their destination.
  */
 
-void initFloorForkPersons(int no, FloorInfo *F, key_t shmidLifts, key_t shmidFloors){
+void initFloorForkPersons(int no, FloorInfo *F, key_t shmidLifts, key_t shmidFloors,int instance_cnt_shmid, int exit_check_lock_semid){
     srand(time(NULL)*no);
-    int personCnt = rand()%(MAXPERSON + 1); //personCnt belongs to {0, 1, 2, 3,..., MAXPERSON}
-    printf("%d people at floor %d\n", personCnt, no);
+//    printf("%d people at floor %d\n", personCnt, no);
 
     int src = -1, des = -1;
     char src_str[10] = "", des_str[10] = "";
     char shmidLifts_str[24], shmidFloors_str[24];
     char name[2];
+    char instance_cnt_shmid_str[24], exit_check_lock_semid_str[24];
 
 //    printf("#%d|%s\n", shmidLifts, shmidLifts_str);
 
 
 
     int j;
-    for(j=0; j<personCnt; j++){
+    for(j=0; j<MAXPERSON; j++){
         int pid = fork();
 //        printf("#%d|%s\n", shmidLifts, shmidLifts_str);
 
@@ -88,15 +88,17 @@ void initFloorForkPersons(int no, FloorInfo *F, key_t shmidLifts, key_t shmidFlo
     sprintf(des_str, "%d", des);
     sprintf(shmidLifts_str, "%d", shmidLifts);
     sprintf(shmidFloors_str, "%d", shmidFloors);
+    sprintf(instance_cnt_shmid_str, "%d", instance_cnt_shmid);
+    sprintf(exit_check_lock_semid_str, "%d", exit_check_lock_semid);
 
-    name[0] = ('A'+((no-1)*5+j));
+    name[0] = ('A'+((no-1)*MAXPERSON+j));
     name[1] = 0;
-    printf("[%s] | %d -> %d \n", name, src, des);
+//    printf("[%s] | %s -> %s \n", name, src_str, des_str);
 //    fflush(stdout);
-    sleep(1);
 
 
-    int stat = execl("./Person","./Person", src_str, des_str, shmidLifts_str, shmidFloors_str, name, NULL);
+    int stat = execl("./Person","./Person", src_str, des_str, shmidLifts_str, shmidFloors_str,
+                     name,instance_cnt_shmid_str, exit_check_lock_semid_str, NULL);
     if(stat == -1){
         int errsv = errno;
         printf("execl | %s | %d \n", __func__ , errsv);
@@ -105,7 +107,7 @@ void initFloorForkPersons(int no, FloorInfo *F, key_t shmidLifts, key_t shmidFlo
 
 }
 
-void forkLift(int no, LiftInfo* L, key_t shmidLifts, key_t shmidFloors){
+void forkLift(int no, LiftInfo* L, key_t shmidLifts, key_t shmidFloors,int instance_cnt_shmid, int exit_check_lock_semid){
     srand(time(NULL)*no);
     for(int i=0; i<no; i++){
         rand();
@@ -130,16 +132,21 @@ void forkLift(int no, LiftInfo* L, key_t shmidLifts, key_t shmidFloors){
     }
 
     char shmidLifts_str[24], shmidFloors_str[24];
+    char instance_cnt_shmid_str[24], exit_check_lock_semid_str[24];
+
     char no_str[8];
 
     sprintf(no_str, "%d", no);
     sprintf(shmidLifts_str, "%d", shmidLifts);
     sprintf(shmidFloors_str, "%d", shmidFloors);
+    sprintf(instance_cnt_shmid_str, "%d", instance_cnt_shmid);
+    sprintf(exit_check_lock_semid_str, "%d", exit_check_lock_semid);
 
     int pid = fork();
     if(pid == 0)
     {
-        int stat = execl("./Lift","./Lift", no_str, shmidLifts_str, shmidFloors_str, NULL);
+        int stat = execl("./Lift","./Lift", no_str, shmidLifts_str, shmidFloors_str,
+                         instance_cnt_shmid_str, exit_check_lock_semid_str, NULL);
         if(stat == -1){
             int errsv = errno;
             printf("execl | %s | %d \n", __func__ , errsv);

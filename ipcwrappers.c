@@ -74,10 +74,11 @@ void initLocks(int shmidLifts, int shmidFloors){
     oneint.val = 1;
 
 
-    for(int i=0; i<NFLOOR; i++) {
+    for(int i=0; i<NLIFT; i++) {
         LiftInfo *L = &(lifts[i]);
         L->stopsem[i] = semget(IPC_PRIVATE, 1, perm | IPC_CREAT);
         semctl(L->stopsem[i], 0, SETVAL, zeroint);
+        pipe(L->pipefd);
     }
 
     for(int i=0; i<NFLOOR; i++) {

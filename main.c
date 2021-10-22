@@ -12,7 +12,7 @@
 #include "ipcwrappers.h"
 
 /* This function initialises each floor and forks persons of that floor. */
-void initFloorsForkPersons(int shmidLifts, int shmidFloors){
+void initFloorsForkPersons(int shmidLifts, int shmidFloors,int instance_cnt_shmid,int exit_check_lock_semid){
     FloorInfo *floors = (FloorInfo*)shmat(shmidFloors, NULL, 0);
     if((void*)floors == (void*)-1){
         int errsv = errno;
@@ -20,13 +20,13 @@ void initFloorsForkPersons(int shmidLifts, int shmidFloors){
     }
 
     for(int i=0; i<NFLOOR; i++){
-        initFloorForkPersons(i + 1, floors + i, shmidLifts, shmidFloors);
+        initFloorForkPersons(i + 1, floors + i, shmidLifts, shmidFloors, instance_cnt_shmid, exit_check_lock_semid);
     }
 
     return;
 }
 
-void forkLifts(int shmidLifts, int shmidFloors){
+void forkLifts(int shmidLifts, int shmidFloors,int instance_cnt_shmid,int exit_check_lock_semid){
     LiftInfo *lifts = (LiftInfo*) shmat(shmidLifts, NULL, 0);
     if((void*) lifts == (void*)-1){
         int errsv = errno;
@@ -34,8 +34,10 @@ void forkLifts(int shmidLifts, int shmidFloors){
     }
 
     for(int i=0; i<NLIFT; i++){
-        forkLift(i + 1, lifts + i, shmidLifts, shmidFloors);
+        forkLift(i + 1, lifts + i, shmidLifts, shmidFloors, instance_cnt_shmid, exit_check_lock_semid);
 //        printf("@ no. %d | floor: %d\n", lifts[i].no, lifts[i].position );
+        close(lifts[i].pipefd[0]);
+        close(lifts[i].pipefd[1]);
     }
     return;
 }
@@ -55,9 +57,31 @@ int main() {
         printf("[%s] shmid | %d", "Floors", errsv);
     }
 
+    int instance_cnt_shmid = shmget(IPC_PRIVATE, sizeof (int), perm | IPC_CREAT);
+    int *instance_cnt = (int*)shmat(instance_cnt_shmid, NULL, 0);
+    *instance_cnt = NFLOOR*MAXPERSON + NLIFT;
+
+    int exit_check_lock_semid = semget(IPC_PRIVATE, 1, perm|IPC_CREAT);
+    semctl(exit_check_lock_semid,0, SETVAL, 1);
+
+
     initLocks(shmidLifts, shmidFloors);
-    initFloorsForkPersons(shmidLifts, shmidFloors);
-    forkLifts(shmidLifts, shmidFloors);
-    while(1);
+    initFloorsForkPersons(shmidLifts, shmidFloors, instance_cnt_shmid, exit_check_lock_semid);
+    forkLifts(shmidLifts, shmidFloors, instance_cnt_shmid, exit_check_lock_semid);
+
+
+
+    while(1){
+        P(exit_check_lock_semid);
+        if((*instance_cnt) == 0)break;
+        V(exit_check_lock_semid);
+        sleep(1);
+    }
+
+    if(shmdt(instance_cnt) == -1){
+        int errsv = errno;
+        printf("[%s] shmdt | %s | %d \n", "instance_cnt", "MAIN" , errsv);
+    }
+
     return 0;
 }
