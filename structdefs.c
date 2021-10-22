@@ -16,14 +16,6 @@ The identifier in a goto statement shall name a label located somewhere in the e
  having a variably modified type to inside the scope of that identifier.
 */
 
-Person initPerson(int src, int des, char *name){
-    Person P;
-    P.src = src;
-    P.des = des;
-    P.name = name; //argv[5]
-    return P;
-}
-
 /*
  * initFloorForkPersons function creates random no. of person processes and
  * according to the source and destination floor no. of a person
@@ -80,7 +72,6 @@ void initFloorForkPersons(int no, FloorInfo *F, key_t shmidLifts, key_t shmidFlo
         }
     }
 
-//    while(wait(-1));
     return;
 
     child_label :
@@ -93,8 +84,6 @@ void initFloorForkPersons(int no, FloorInfo *F, key_t shmidLifts, key_t shmidFlo
 
     name[0] = ('A'+((no-1)*MAXPERSON+j));
     name[1] = 0;
-//    printf("[%s] | %s -> %s \n", name, src_str, des_str);
-//    fflush(stdout);
 
 
     int stat = execl("./Person","./Person", src_str, des_str, shmidLifts_str, shmidFloors_str,
@@ -118,14 +107,20 @@ void forkLift(int no, LiftInfo* L, key_t shmidLifts, key_t shmidFloors,int insta
     L->position = 1+(rand()%NFLOOR);
     L->peopleInLift = 0;
     L->step_cnt = 0;
-    int perm = 0777;
 
-//    union semun zeroint;
-//    zeroint.val = 0;
-//    for(int i=0; i<NFLOOR; i++) {
-//        L->stopsem[i] = semget(IPC_PRIVATE, 1, perm | IPC_CREAT);
-//        semctl(L->stopsem[i], 0, SETVAL, zeroint);
-//    }
+    /* SPECIAL CASE
+     * If we have two lift in order to minimize waiting time run lifts in opposite directions.
+     */
+    if(NLIFT == 2){
+        if(no == 1){
+            L->direction = 1;
+            L->position = 1;
+        }
+        else/*no == 2*/{
+            L->direction = -1;
+            L->position = NFLOOR;
+        }
+    }
 
     for(int i=0; i<NFLOOR; i++){
         L->stops[i] = 0;

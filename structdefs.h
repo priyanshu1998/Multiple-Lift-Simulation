@@ -15,14 +15,6 @@ typedef int semaphore;
 #define NLIFT 2
 
 #define TOT_STEPS 50
-#define LIFT_SLEEP_T 1
-#define END_STOPTIME 1
-
-struct Person{
-    int src;
-    int des;
-    char *name;
-};
 
 struct FloorInfo{
     int waitingToGoUp;          /* #people waiting to go up */
@@ -45,10 +37,8 @@ struct LiftInfo{
 
     semaphore stopsem[NFLOOR];/* #people in lift wait on one of these */
     int step_cnt;
-    int pipefd[2];
 };
 
-Person initPerson(int src, int des, char *name);
 void initFloorForkPersons(int no, FloorInfo* F, key_t shmidLifts, key_t shmidFloors,int instance_cnt_shmid, int exit_check_lock_semid);
 void forkLift(int no, LiftInfo* L, key_t shmidLifts, key_t shmidFloors, int instance_cnt_shmid, int exit_check_lock_semid);
 
