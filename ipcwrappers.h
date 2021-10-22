@@ -1,7 +1,3 @@
-//
-// Created by hiro on 10/17/21.
-//
-
 #ifndef ASSIGNMENT6_IPCWRAPPERS_H
 #define ASSIGNMENT6_IPCWRAPPERS_H
 #include "structdefs.h"
@@ -29,4 +25,7 @@ int init(int shmidLifts, int shmidFloors, LiftInfo **lifts, FloorInfo** floors);
 int release(LiftInfo *lifts, FloorInfo *floors);
 
 void initLocks(int shmidLifts, int shmidFloors);
+
+void rmIPCobject(int shmidLifts,  int shmidFloors,
+                 int instance_cnt_shmid, int exit_check_lock_semid);
 #endif //ASSIGNMENT6_IPCWRAPPERS_H

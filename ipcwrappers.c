@@ -95,3 +95,58 @@ void initLocks(int shmidLifts, int shmidFloors){
     }
 }
 
+void rmIPCobject(int shmidLifts,  int shmidFloors,
+                 int instance_cnt_shmid, int exit_check_lock_semid){
+
+    LiftInfo *lifts;
+    FloorInfo* floors;
+    init(shmidLifts, shmidFloors, &lifts, &floors);
+
+    for(int i=0; i<NLIFT; i++){
+        for(int j=0; j<NFLOOR; j++){
+            if(semctl(lifts[i].stopsem[j], 0, IPC_RMID) == -1){
+                int errsv = errno;
+                printf("semctl| IPC_RMID | %d \n", errsv);
+            }
+        }
+    }
+
+    for(int i=0; i<NFLOOR; i++){
+        if(semctl(floors[i].upArrow, 0, IPC_RMID) == -1){
+            int errsv = errno;
+            printf("semctl| IPC_RMID | %d \n", errsv);
+        }
+
+        if(semctl(floors[i].downArrow, 0, IPC_RMID) == -1){
+            int errsv = errno;
+            printf("semctl| IPC_RMID | %d \n", errsv);
+        }
+
+        if(semctl(floors[i].arithmetic, 0, IPC_RMID) == -1){
+            int errsv = errno;
+            printf("semctl| IPC_RMID | %d \n", errsv);
+        }
+    }
+    release(lifts, floors);
+
+    if(shmctl(shmidFloors, IPC_RMID, 0) == -1){
+        int errsv = errno;
+        printf("shmctl| IPC_RMID | %d \n", errsv);
+    }
+
+    if(shmctl(shmidLifts, IPC_RMID, 0) == -1){
+        int errsv = errno;
+        printf("shmctl| IPC_RMID | %d \n", errsv);
+    }
+
+    if(shmctl(instance_cnt_shmid, IPC_RMID, 0) == -1){
+        int errsv = errno;
+        printf("shmctl| IPC_RMID | %d \n", errsv);
+    }
+
+    if(semctl(exit_check_lock_semid, 0, IPC_RMID) == -1){
+        int errsv = errno;
+        printf("semctl| IPC_RMID | %d \n", errsv);
+    }
+}
+
