@@ -35,15 +35,21 @@ void forkLifts(int shmidLifts, int shmidFloors,int instance_cnt_shmid,int exit_c
 
     for(int i=0; i<NLIFT; i++){
         forkLift(i + 1, lifts + i, shmidLifts, shmidFloors, instance_cnt_shmid, exit_check_lock_semid);
-//        printf("@ no. %d | floor: %d\n", lifts[i].no, lifts[i].position );
-        close(lifts[i].pipefd[0]);
-        close(lifts[i].pipefd[1]);
     }
     return;
 }
 
 
 int main() {
+    printf(" The simulation will run for about around 20to30 seconds \n "
+            "and following that all the processes will have terminate. \n"
+            "Dont press CTRL+C as the all the child processes have temination condition coded in them.\n"
+
+            "\n\n NOTE: The simulation pauses when any lift moves to the next floor or changes direction\n");
+
+    printf("\n\nPress Enter to continue.\n\n");
+    getchar();
+
     int perm = 0777;//S_IRWXU | S_IRWXG | S_IRWXO;
     int shmidLifts = shmget(IPC_PRIVATE, NFLOOR*sizeof (FloorInfo), perm | IPC_CREAT);
     if(shmidLifts == -1){
@@ -66,8 +72,8 @@ int main() {
 
 
     initLocks(shmidLifts, shmidFloors);
-    initFloorsForkPersons(shmidLifts, shmidFloors, instance_cnt_shmid, exit_check_lock_semid);
     forkLifts(shmidLifts, shmidFloors, instance_cnt_shmid, exit_check_lock_semid);
+    initFloorsForkPersons(shmidLifts, shmidFloors, instance_cnt_shmid, exit_check_lock_semid);
 
 
 
@@ -82,6 +88,8 @@ int main() {
         int errsv = errno;
         printf("[%s] shmdt | %s | %d \n", "instance_cnt", "MAIN" , errsv);
     }
+    sleep(1);
+    rmIPCobject(shmidLifts, shmidFloors, instance_cnt_shmid, exit_check_lock_semid);
 
     return 0;
 }
