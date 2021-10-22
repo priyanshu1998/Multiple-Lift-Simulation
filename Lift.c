@@ -13,17 +13,6 @@
 #include "structdefs.h"
 #include "ipcwrappers.h"
 
-void piperead(int fd, FILE* fp){
-    char buf[10000];
-
-    while (read(fd, buf, 1) > 0){
-//        printf("%s",buf);
-//        buf[2] = 0;
-//        fprintf(fp, "%s", buf);
-        write(STDOUT_FILENO, buf, 1);
-    }
-}
-
 char lifttab[2][10] = {"", "\t\t\t\t\t\t\t"};
 
 int main(int argc, char **argv){
@@ -43,23 +32,11 @@ int main(int argc, char **argv){
     LiftInfo *lifts = NULL;
     FloorInfo *floors = NULL;
 
-    char filename[100] = "liftlog";
-    strcat(filename, argv[1]);
-    strcat(filename, ".txt");
-    FILE *fp = stdout;//fopen(filename, "w");
-
     init(shmidLifts, shmidFloors, &lifts, &floors);
-    for(int i=0;i<NLIFT;i++){
-        if(i!=liftno-1){
-            close(lifts[i].pipefd[0]);
-            close(lifts[i].pipefd[1]);
-        }
-    }
 
     LiftInfo *L = &(lifts[liftno-1]); //as liftno is 1 indexed
-    close(L->pipefd[1]);
 
-    fprintf(fp,"%s[0 | Lift_%d] | initial floor: %d\n",lifttab[L->no-1], L->no, L->position);
+    printf("%s[0 | Lift_%d] | initial floor: %d\n",lifttab[L->no-1], L->no, L->position);
 
 //    printf("# %s %d %d %d\n", argv[0], liftno, shmidLifts, shmidFloors);
 
@@ -78,7 +55,6 @@ int main(int argc, char **argv){
                 P(L->stopsem[F]);
                 if (L->stops[F] == 0) { break; }
                 V(L->stopsem[F]);
-                sleep(LIFT_SLEEP_T);
             }
 
             // Releasing lock for those who want to get up =========
@@ -90,26 +66,23 @@ int main(int argc, char **argv){
                 if (X->waitingToGoUp == 0) {
                     if(L->position == NFLOOR){
                         L->direction = -1;
-                        sleep(END_STOPTIME);
+//                        sleep(END_STOPTIME);
                     }
                     else{
                         L->position += L->direction;
                     }
                     L->step_cnt++;
 
-                    if(L->direction == 1) {fprintf(fp,"%s[%d | Lift_%d] move up to %d.\n",lifttab[L->no-1] ,L->step_cnt,L->no, L->position);}
-                    else{ fprintf(fp,"%s[%d | Lift_%d] at floor %d changed direction\n",lifttab[L->no-1],L->step_cnt,L->no, L->position);}
+                    if(L->direction == 1) {printf("%s[%d | Lift_%d] move up to %d.\n",lifttab[L->no-1] ,L->step_cnt,L->no, L->position);}
+                    else{ printf("%s[%d | Lift_%d] at floor %d changed direction\n",lifttab[L->no-1],L->step_cnt,L->no, L->position);}
 
                     break;
                 }
                 V(X->arithmetic);
                 V(X->upArrow);
-                sleep(LIFT_SLEEP_T);
             }
             V(X->arithmetic); // X.arithmetic was 1 before 'P(X.upArrow) line'
             // release X.arithmetic lock to maintain the state.
-//            printf("Lift %d moved up.\n",L->no);
-
         }
         /******************END OF CASE******************/
 
@@ -127,7 +100,6 @@ int main(int argc, char **argv){
                 P(L->stopsem[F]);
                 if (L->stops[F] == 0) { break; }
                 V(L->stopsem[F]);
-                sleep(LIFT_SLEEP_T);
             }
 
 
@@ -139,21 +111,19 @@ int main(int argc, char **argv){
                 if (X->waitingToGoDown == 0) {
                     if(L->position == 1){
                         L->direction = 1;
-                        sleep(END_STOPTIME);
                     }
                     else{
                         L->position += L->direction;
                     }
 
                     L->step_cnt++;
-                    if(L->direction == 1) {fprintf(fp,"%s[%d | Lift_%d] at floor %d changed direction\n",lifttab[L->no-1], L->step_cnt,L->no, L->position);}
-                    else{ fprintf(fp,"%s[%d | Lift_%d] move down to %d.\n",lifttab[L->no-1], L->step_cnt,L->no, L->position);}
+                    if(L->direction == 1) {printf("%s[%d | Lift_%d] at floor %d changed direction\n",lifttab[L->no-1], L->step_cnt,L->no, L->position);}
+                    else{ printf("%s[%d | Lift_%d] move down to %d.\n",lifttab[L->no-1], L->step_cnt,L->no, L->position);}
 
                     break;
                 }
                 V(X->arithmetic);
                 V(X->downArrow);
-                sleep(LIFT_SLEEP_T);
             }
             V(X->arithmetic);
         }
@@ -167,9 +137,6 @@ int main(int argc, char **argv){
     V(exit_check_lock_semid);
 
     #pragma clang diagnostic pop
-//    piperead(L->pipefd[0], fp);
-    close(L->pipefd[0]);
-    printf("Piperead done\n");
 
     release(lifts, floors);
     return 0;
