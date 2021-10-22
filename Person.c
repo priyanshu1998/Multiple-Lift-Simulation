@@ -21,19 +21,6 @@ void swap(int *a, int *b){
     *b = t;
 }
 
-//choices are random
-void setChoicePriority(int *choices){
-    srand(getpid());
-    for(int i=0; i<NFLOOR; i++){choices[i] = i;}
-
-    int endpos = NFLOOR - 1;
-    for(int i=0; i<NFLOOR; i++){
-        int p = rand() % (endpos+1);
-        swap(&(choices[p]), &(choices[endpos])); //pick an index from [0...endpos] and place it at the end of the array.
-        endpos--;
-    }
-}
-
 int main(int argc, char **argv){
     if (argc != 8){
         printf("'Person' process executed with incorrect no. of parameters\n");
@@ -55,24 +42,20 @@ int main(int argc, char **argv){
     FloorInfo *floors = NULL;
     init(shmidLifts, shmidFloors,  &lifts, &floors);
 
-    Person p = initPerson(src, des, name);
-//    printf("$ %d %d %d %d %d\n",getpid(), p.src, p.des, shmidLifts, shmidFloors);
-    printf("%s#[%s] | %d -> %d\n",personTab, name, p.src, p.des);
-    sleep(1);
-    int choices[NFLOOR];
-    setChoicePriority(choices);
-
-    for(int i=0; i<NLIFT; i++){
-        close(lifts[i].pipefd[0]);
-    }
+//    printf("$ %d %d %d %d %d\n",getpid(), src, des, shmidLifts, shmidFloors);
+//    printf("%s#[%s] | %d -> %d\n",personTab, name, src, des);
+//    sleep(1);
 
     LiftInfo *L = NULL;
     #pragma clang diagnostic push
     #pragma ide diagnostic ignored "EndlessLoop"
     while(1){
-        if(p.des > p.src){
-            int src_idx = p.src-1;
-            int des_idx = p.des-1;
+        printf("%s#[%s] | %d -> %d\n",personTab, name, src, des);
+
+        if(des > src){
+            int src_idx = src-1;
+            int des_idx = des-1;
+//            printf("%s#[%s] | %d -> %d\n",personTab, name, src_idx, des_idx);
 
             //Person waiting to get into the lift--------------
             FloorInfo* X = &(floors[src_idx]);
@@ -80,11 +63,10 @@ int main(int argc, char **argv){
             P(X->arithmetic);
             for(int i=0; i<NLIFT; i++){
                 L = &(lifts[i]);
-                if(L->position == p.src){
+                if(L->position == src){
                     L->step_cnt++;
-                    sprintf(msg,"%s[%d | Lift_%d] %s person got up.\n",lifttab[L->no-1],L->step_cnt, L->no, p.name);
+                    sprintf(msg,"%s[%d | Lift_%d] %s person got up at %d\n",lifttab[L->no-1], L->step_cnt, L->no, name, L->position);
                     printf("%s", msg);
-//                    write(L->pipefd[1],msg, strlen(msg));
 
                     X->waitingToGoUp--;
                     L->stops[des_idx]++;
@@ -96,13 +78,13 @@ int main(int argc, char **argv){
             V(X->upArrow);
             //Person has completed getting into the lift--------
 
+            sleep(1);
 
             //Person waiting to get out of the lift--------
             P(L->stopsem[des_idx]);
             L->step_cnt++;
-            sprintf(msg,"%s[%d | Lift_%d] %s person got down .\n",lifttab[L->no-1],L->step_cnt,L->no, p.name);
+            sprintf(msg,"%s[%d | Lift_%d] %s person got down at %d\n",lifttab[L->no-1],L->step_cnt,L->no, name, L->position);
             printf("%s", msg);
-//            write(L->pipefd[1], msg, strlen(msg));
             L->stops[des_idx]--;
             V(L->stopsem[des_idx]);
             //Person has got down from the lift------------
@@ -113,19 +95,20 @@ int main(int argc, char **argv){
 
         else{
             //Person wants to go down=========================
-            int src_idx = p.src-1;
-            int des_idx = p.des-1;
+            int src_idx = src-1;
+            int des_idx = des-1;
+//            printf("%s#[%s] | %d -> %d\n",personTab, name, src_idx, des_idx);
+
 
             FloorInfo* X = &(floors[src_idx]);
             P(X->downArrow);
             P(X->arithmetic);
             for(int i=0; i<NLIFT; i++){
                 L = &(lifts[i]);
-                if(L->position == p.src){
+                if(L->position == src){
                     L->step_cnt++;
-                    sprintf(msg,"%s[%d | Lift_%d] %s person got up.\n",lifttab[L->no-1], L->step_cnt, L->no, p.name);
+                    sprintf(msg,"%s[%d | Lift_%d] %s person got up at %d\n",lifttab[L->no-1], L->step_cnt, L->no, name, L->position);
                     printf("%s", msg);
-//                    write(L->pipefd[1], msg, strlen(msg));
                     X->waitingToGoDown--;
                     L->stops[des_idx]++;
                     break;
@@ -135,13 +118,13 @@ int main(int argc, char **argv){
             V(X->downArrow);
             //Person has completed getting into the lift--------
 
+            sleep(1);
             //Person waiting to get out of the lift--------
             P(L->stopsem[des_idx]);
             L->step_cnt++;
-            sprintf(msg,"%s[%d | Lift_%d] %s person got down .\n",lifttab[L->no-1] ,L->step_cnt,L->no, p.name);
+            sprintf(msg,"%s[%d | Lift_%d] %s person got down at %d\n",lifttab[L->no-1],L->step_cnt,L->no, name, L->position);
             printf("%s", msg);
 
-//            write(L->pipefd[1], msg, strlen(msg)+1);
             L->stops[des_idx]--;
             V(L->stopsem[des_idx]);
             //Person has got down from the lift------------
@@ -152,19 +135,18 @@ int main(int argc, char **argv){
 
         sleep(1);
         //Person scheduling a new journey-------------------------------
-        p.src = p.des;
-        while (p.des == p.src){
-            p.des = rand()%NFLOOR + 1;
+        src = des;
+        while (des == src){
+            des = rand()%NFLOOR + 1;
         }
 
 
-        int src_idx = p.src-1;
+        int src_idx = src-1;
         FloorInfo *X = &(floors[src_idx]);
 
         P(X->arithmetic);
-        if(p.des > p.src){ X->waitingToGoUp++;}
-        else /* (p.des < p.src) */{ X->waitingToGoDown++;}
-        printf("%s#[%s] | %d -> %d\n",personTab, name, p.src, p.des);
+        if(des > src){ X->waitingToGoUp++;}
+        else /* (des < src) */{ X->waitingToGoDown++;}
         V(X->arithmetic);
         //Person starts waiting at a floor to get into the lift----------
     }
@@ -173,12 +155,6 @@ int main(int argc, char **argv){
     P(exit_check_lock_semid);
     (*instance_cnt)--;
     V(exit_check_lock_semid);
-
-    for(int i=0; i<NLIFT; i++){
-        close(lifts[i].pipefd[1]);
-    }
-    printf("%s closed files\n", p.name);
-
 
     release(lifts, floors);
     return 0;
