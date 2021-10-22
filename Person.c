@@ -11,7 +11,7 @@
 #include "structdefs.h"
 #include "ipcwrappers.h"
 
-char lifttab[2][10] = {"", "\t\t\t\t\t\t\t"};
+char lifttab[NFLOOR][10] = {"", "\t\t\t\t\t\t\t"};
 char personTab[20] = "\t\t\t\t\t\t\t\t\t\t\t\t\t\t";
 
 
@@ -27,7 +27,6 @@ int main(int argc, char **argv){
         return 1;
     }
     char msg[100];
-    // src des log from initFloorForkPersons;
     int src = atoi(argv[1]);
     int des = atoi(argv[2]);
     int shmidLifts = atoi(argv[3]);
@@ -35,6 +34,8 @@ int main(int argc, char **argv){
     char *name = argv[5];
     int instance_cnt_shmid = atoi(argv[6]);
     int exit_check_lock_semid = atoi(argv[7]);
+
+    srand(getpid());
 
     int *instance_cnt = shmat(instance_cnt_shmid, NULL, 0);
 
@@ -44,7 +45,6 @@ int main(int argc, char **argv){
 
 //    printf("$ %d %d %d %d %d\n",getpid(), src, des, shmidLifts, shmidFloors);
 //    printf("%s#[%s] | %d -> %d\n",personTab, name, src, des);
-//    sleep(1);
 
     LiftInfo *L = NULL;
     #pragma clang diagnostic push
@@ -65,26 +65,21 @@ int main(int argc, char **argv){
                 L = &(lifts[i]);
                 if(L->position == src){
                     L->step_cnt++;
-                    sprintf(msg,"%s[%d | Lift_%d] %s person got up at %d\n",lifttab[L->no-1], L->step_cnt, L->no, name, L->position);
-                    printf("%s", msg);
+                    printf("%s[%d | Lift_%d] %s got up at %d\n",lifttab[L->no-1], L->step_cnt, L->no, name, L->position);
 
                     X->waitingToGoUp--;
                     L->stops[des_idx]++;
                     break;
                 }
             }
-//            sleep(1);
             V(X->arithmetic);
             V(X->upArrow);
             //Person has completed getting into the lift--------
 
-            sleep(1);
-
             //Person waiting to get out of the lift--------
             P(L->stopsem[des_idx]);
             L->step_cnt++;
-            sprintf(msg,"%s[%d | Lift_%d] %s person got down at %d\n",lifttab[L->no-1],L->step_cnt,L->no, name, L->position);
-            printf("%s", msg);
+            printf("%s[%d | Lift_%d] %s got down at %d\n",lifttab[L->no-1],L->step_cnt,L->no, name, L->position);
             L->stops[des_idx]--;
             V(L->stopsem[des_idx]);
             //Person has got down from the lift------------
@@ -107,8 +102,7 @@ int main(int argc, char **argv){
                 L = &(lifts[i]);
                 if(L->position == src){
                     L->step_cnt++;
-                    sprintf(msg,"%s[%d | Lift_%d] %s person got up at %d\n",lifttab[L->no-1], L->step_cnt, L->no, name, L->position);
-                    printf("%s", msg);
+                    printf("%s[%d | Lift_%d] %s got up at %d\n",lifttab[L->no-1], L->step_cnt, L->no, name, L->position);
                     X->waitingToGoDown--;
                     L->stops[des_idx]++;
                     break;
@@ -118,13 +112,10 @@ int main(int argc, char **argv){
             V(X->downArrow);
             //Person has completed getting into the lift--------
 
-            sleep(1);
             //Person waiting to get out of the lift--------
             P(L->stopsem[des_idx]);
             L->step_cnt++;
-            sprintf(msg,"%s[%d | Lift_%d] %s person got down at %d\n",lifttab[L->no-1],L->step_cnt,L->no, name, L->position);
-            printf("%s", msg);
-
+            printf("%s[%d | Lift_%d] %s got down at %d\n",lifttab[L->no-1],L->step_cnt,L->no, name, L->position);
             L->stops[des_idx]--;
             V(L->stopsem[des_idx]);
             //Person has got down from the lift------------
