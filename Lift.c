@@ -13,7 +13,7 @@
 #include "structdefs.h"
 #include "ipcwrappers.h"
 
-char lifttab[2][10] = {"", "\t\t\t\t\t\t\t"};
+char lifttab[2][10] = {"", "\t\t\t\t\t\t\t\t\t"};
 
 int main(int argc, char **argv){
     if(argc != 6){

@@ -41,14 +41,11 @@ void forkLifts(int shmidLifts, int shmidFloors,int instance_cnt_shmid,int exit_c
 
 
 int main() {
-    printf(" The simulation will run for about around 20to30 seconds \n "
-            "and following that all the processes will have terminate. \n"
-            "Dont press CTRL+C as the all the child processes have temination condition coded in them.\n"
-
-            "\n\n NOTE: The simulation pauses when any lift moves to the next floor or changes direction\n");
-
-    printf("\n\nPress Enter to continue.\n\n");
-    getchar();
+//   The simulation will run for "about a minute"(30-45 seconds on an avg) before termination
+//    and by that time all the processes would have terminated.
+//   Dont press CTRL+C as the all the child processes have termination condition coded in them.
+//
+//   NOTE: The simulation will pause (sleep for 1 sec) when any lift moves to the next floor or changes direction
 
     int perm = 0777;//S_IRWXU | S_IRWXG | S_IRWXO;
     int shmidLifts = shmget(IPC_PRIVATE, NFLOOR*sizeof (FloorInfo), perm | IPC_CREAT);

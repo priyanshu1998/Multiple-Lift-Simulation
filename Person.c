@@ -11,8 +11,8 @@
 #include "structdefs.h"
 #include "ipcwrappers.h"
 
-char lifttab[NFLOOR][10] = {"", "\t\t\t\t\t\t\t"};
-char personTab[20] = "\t\t\t\t\t\t\t\t\t\t\t\t\t\t";
+char lifttab[NFLOOR][10] = {"", "\t\t\t\t\t\t\t\t\t"};
+char personTab[20] = "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t";
 
 
 void swap(int *a, int *b){
